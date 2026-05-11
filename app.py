@@ -3,17 +3,24 @@ from db import connect_db
 import pdfkit
 import os
 import platform
+import shutil
 
 app = Flask(__name__)
 
-# --- إعدادات wkhtmltopdf الديناميكية ---
+# --- إعدادات wkhtmltopdf الديناميكية الذكية ---
 if platform.system() == "Windows":
     # المسار الخاص بجهازك أثناء التطوير
     path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 else:
-    # يجب أن يكون هناك 4 مسافات (أو Tab) قبل السطر التالي
-    config = pdfkit.configuration()
+    # البحث عن المسار تلقائياً في سيرفر Railway (Linux)
+    path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
+    if path_to_wkhtmltopdf:
+        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+    else:
+        # محاولة أخيرة لو لم يكتشفه shutil
+        config = pdfkit.configuration()
+
 def generate_pdf_file(title, content, article_id):
     pdf_folder = os.path.join('static', 'pdfs')
     if not os.path.exists(pdf_folder):
@@ -22,7 +29,7 @@ def generate_pdf_file(title, content, article_id):
     file_name = f"summary_{article_id}.pdf"
     file_path = os.path.join(pdf_folder, file_name)
     
-    # تحسين التنسيق ليدعم العربية بشكل أفضل في السيرفرات
+    # تحسين التنسيق ليدعم العربية بشكل أفضل
     html_content = f"""
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -30,7 +37,7 @@ def generate_pdf_file(title, content, article_id):
         <meta charset="UTF-8">
         <style>
             body {{ font-family: 'Arial', sans-serif; text-align: right; padding: 20px; }}
-            h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; pb: 10px; }}
+            h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
             p {{ font-size: 16px; line-height: 1.8; color: #34495e; }}
             .footer {{ color: #7f8c8d; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; pt: 10px; }}
         </style>
@@ -103,7 +110,6 @@ def add_news_from_n8n():
         db = connect_db()
         cursor = db.cursor()
         
-        # التأكد من عدم تكرار الرابط
         cursor.execute("SELECT id FROM articles WHERE url = %s", (url,))
         if cursor.fetchone() is None:
             sql = "INSERT INTO articles (title, description, category, url, source_name) VALUES (%s, %s, %s, %s, %s)"
@@ -132,12 +138,11 @@ def index():
     news_data = get_news_by_categories(search_query)
     return render_template('news_report.html', organized_news=news_data, search_query=search_query)
 
-# إضافة Route لصفحة الأتمتة للربط مع n8n
 @app.route('/automation')
 def automation():
-    # استبدل هذا بالـ URL الخاص بـ n8n على السيرفر
     n8n_url = "https://hamzayassen.app.n8n.cloud/" 
     return render_template('automation.html', n8n_url=n8n_url)
 
 if __name__ == '__main__':
+    # ملاحظة: debug=True مفيد للتطوير المحلي فقط
     app.run(debug=True, host='0.0.0.0', port=5000)
