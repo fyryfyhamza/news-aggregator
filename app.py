@@ -18,7 +18,6 @@ else:
     if path_to_wkhtmltopdf:
         config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
     else:
-        # محاولة أخيرة لو لم يكتشفه shutil
         config = pdfkit.configuration()
 
 def generate_pdf_file(title, content, article_id):
@@ -29,7 +28,6 @@ def generate_pdf_file(title, content, article_id):
     file_name = f"summary_{article_id}.pdf"
     file_path = os.path.join(pdf_folder, file_name)
     
-    # تحسين التنسيق ليدعم العربية بشكل أفضل
     html_content = f"""
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -39,7 +37,7 @@ def generate_pdf_file(title, content, article_id):
             body {{ font-family: 'Arial', sans-serif; text-align: right; padding: 20px; }}
             h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
             p {{ font-size: 16px; line-height: 1.8; color: #34495e; }}
-            .footer {{ color: #7f8c8d; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; pt: 10px; }}
+            .footer {{ color: #7f8c8d; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; padding-top: 10px; }}
         </style>
     </head>
     <body>
@@ -50,48 +48,14 @@ def generate_pdf_file(title, content, article_id):
     </html>
     """
     
-    options = {
-        'encoding': "UTF-8",
-        'enable-local-file-access': None,
-        'quiet': '',
-        'margin-top': '0.75in',
-        'margin-right': '0.75in',
-        'margin-bottom': '0.75in',
-        'margin-left': '0.75in',
-    }
+    options = {'encoding': "UTF-8", 'enable-local-file-access': None, 'quiet': ''}
     
     try:
         pdfkit.from_string(html_content, file_path, configuration=config, options=options)
         return file_name
     except Exception as e:
-        print(f"Error generating PDF: {e}")
+        print(f"❌ PDF Generation Error: {e}")
         return None
-
-def get_news_by_categories(search_query=None):
-    db = connect_db()
-    cursor = db.cursor(dictionary=True)
-    categories = ['Wars & Conflicts', 'Economy & Gold', 'Sports', 'Technology']
-    organized_news = {}
-
-    try:
-        for cat in categories:
-            if search_query:
-                query = """
-                    SELECT * FROM articles 
-                    WHERE category = %s AND (title LIKE %s OR description LIKE %s) 
-                    ORDER BY id DESC
-                """
-                search_param = f"%{search_query}%"
-                cursor.execute(query, (cat, search_param, search_param))
-            else:
-                query = "SELECT * FROM articles WHERE category = %s ORDER BY id DESC LIMIT 6"
-                cursor.execute(query, (cat,))
-            
-            organized_news[cat] = cursor.fetchall()
-    finally:
-        cursor.close()
-        db.close()
-    return organized_news
 
 @app.route('/api/add_news', methods=['POST'])
 def add_news_from_n8n():
@@ -102,14 +66,16 @@ def add_news_from_n8n():
     title = data.get('title')
     description = data.get('summary')
     category = data.get('category')
-    url = data.get('link')
+    url = data.get('link') # الرابط الأصلي للخبر (Bonus)
     source = "AI News Agent"
 
-    db = None
+    db = connect_db()
+    if not db:
+        return jsonify({"status": "error", "message": "Database connection failed"}), 500
+
     try:
-        db = connect_db()
-        cursor = db.cursor()
-        
+        cursor = db.cursor(dictionary=True)
+        # التأكد من عدم تكرار الخبر
         cursor.execute("SELECT id FROM articles WHERE url = %s", (url,))
         if cursor.fetchone() is None:
             sql = "INSERT INTO articles (title, description, category, url, source_name) VALUES (%s, %s, %s, %s, %s)"
@@ -129,14 +95,30 @@ def add_news_from_n8n():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
-        if db:
-            db.close()
+        db.close()
 
 @app.route('/')
 def index():
     search_query = request.args.get('search', '')
-    news_data = get_news_by_categories(search_query)
-    return render_template('news_report.html', organized_news=news_data, search_query=search_query)
+    db = connect_db()
+    cursor = db.cursor(dictionary=True)
+    categories = ['Wars & Conflicts', 'Economy & Gold', 'Sports', 'Technology']
+    organized_news = {}
+
+    try:
+        for cat in categories:
+            if search_query:
+                query = "SELECT * FROM articles WHERE category = %s AND (title LIKE %s OR description LIKE %s) ORDER BY id DESC"
+                param = f"%{search_query}%"
+                cursor.execute(query, (cat, param, param))
+            else:
+                query = "SELECT * FROM articles WHERE category = %s ORDER BY id DESC LIMIT 6"
+                cursor.execute(query, (cat,))
+            organized_news[cat] = cursor.fetchall()
+    finally:
+        db.close()
+    
+    return render_template('news_report.html', organized_news=organized_news, search_query=search_query)
 
 @app.route('/automation')
 def automation():
@@ -144,5 +126,4 @@ def automation():
     return render_template('automation.html', n8n_url=n8n_url)
 
 if __name__ == '__main__':
-    # ملاحظة: debug=True مفيد للتطوير المحلي فقط
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
