@@ -10,9 +10,27 @@ app = Flask(__name__)
 # --- إعدادات wkhtmltopdf الديناميكية الذكية ---
 def get_pdf_config():
     if platform.system() == "Windows":
-        # المسار الخاص بجهازك أثناء التطوير
         path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
         return pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+    else:
+        # بنجرب المسار المشهور في nixpacks
+        standard_path = '/usr/bin/wkhtmltopdf'
+        if os.path.exists(standard_path):
+            return pdfkit.configuration(wkhtmltopdf=standard_path)
+        
+        # بنجرب البحث التلقائي
+        auto_path = shutil.which('wkhtmltopdf')
+        if auto_path:
+            return pdfkit.configuration(wkhtmltopdf=auto_path)
+        
+        # لو ملقاش خالص، مش هنخلي البرنامج يقع (Crash)
+        # هنرجعه فاضي وهيدي Error بس لما تيجي تعمل PDF مش أول ما السيرفر يقوم
+        try:
+            return pdfkit.configuration(wkhtmltopdf='wkhtmltopdf')
+        except:
+            return None
+
+config = get_pdf_config()
     else:
         # 1. البحث في المسارات القياسية لنظام Linux بعد تثبيت nixPkgs
         paths = [
