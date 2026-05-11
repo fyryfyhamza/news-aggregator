@@ -1,3 +1,9 @@
 requests
 beautifulsoup4
 mysql-connector-python
+flask
+mysql-connector-python
+newsapi-python
+pdfkit
+pandas
+scikit-learn
