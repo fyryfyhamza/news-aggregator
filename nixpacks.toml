@@ -1,15 +1,8 @@
 [phases.setup]
-nixPkgs = ['python3', 'wkhtmltopdf']
+nixPkgs = ["python3", "wkhtmltopdf"]
 
 [phases.build]
-cmds = ['pip install -r requirements.txt']
-[phases.setup]
-nixPkgs = ['...', 'wkhtmltopdf']
-
-[phases.build]
-cmds = ['pip install -r requirements.txt']
+cmds = ["pip install -r requirements.txt"]
 
 [phases.start]
-cmds = ['python app.py']
-[phases.setup]
-nixPkgs = ["...", "wkhtmltopdf"] # الـ "..." معناها سيب الحزم القديمة وضيف دي عليها
+cmds = ["python app.py"]
