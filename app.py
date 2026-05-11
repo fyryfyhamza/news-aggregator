@@ -18,13 +18,17 @@ else:
     if path_to_wkhtmltopdf:
         config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
     else:
-# البحث عن مسار الأداة في النظام أياً كان مكانها
+# --- إعدادات wkhtmltopdf بالمسافات الصحيحة ---
 path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
 
 if platform.system() == "Windows":
-    # المسار الخاص بجهازك (Local)
-    path_local = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    config = pdfkit.configuration(wkhtmltopdf=path_local)
+    path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+else:
+    if path_to_wkhtmltopdf:
+        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+    else:
+        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 else:
     # المسار الخاص بـ Railway (Linux)
     if path_to_wkhtmltopdf:
