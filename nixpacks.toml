@@ -11,3 +11,5 @@ cmds = ['pip install -r requirements.txt']
 
 [phases.start]
 cmds = ['python app.py']
+[phases.setup]
+nixPkgs = ["...", "wkhtmltopdf"] # الـ "..." معناها سيب الحزم القديمة وضيف دي عليها
