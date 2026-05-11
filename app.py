@@ -18,12 +18,18 @@ else:
     if path_to_wkhtmltopdf:
         config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
     else:
-# --- إعدادات wkhtmltopdf بالمسافات الصحيحة ---
-path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
-
+# --- إعدادات wkhtmltopdf مع تصحيح المسافات ---
 if platform.system() == "Windows":
+    # المسار الخاص بجهازك أثناء التطوير
     path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+else:
+    # لازم الأسطر اللي تحت else تكون داخلة لجوه (4 مسافات أو Tab)
+    path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
+    if path_to_wkhtmltopdf:
+        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+    else:
+        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 else:
     if path_to_wkhtmltopdf:
         config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
