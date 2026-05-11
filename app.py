@@ -8,40 +8,23 @@ import shutil
 app = Flask(__name__)
 
 # --- إعدادات wkhtmltopdf الديناميكية الذكية ---
-if platform.system() == "Windows":
-    # المسار الخاص بجهازك أثناء التطوير
-    path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-else:
-    # البحث عن المسار تلقائياً في سيرفر Railway (Linux)
-    path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
-    if path_to_wkhtmltopdf:
-        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+def get_pdf_config():
+    if platform.system() == "Windows":
+        # المسار الخاص بجهازك أثناء التطوير
+        path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
+        return pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
     else:
-# --- إعدادات wkhtmltopdf مع تصحيح المسافات ---
-if platform.system() == "Windows":
-    # المسار الخاص بجهازك أثناء التطوير
-    path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-else:
-    # لازم الأسطر اللي تحت else تكون داخلة لجوه (4 مسافات أو Tab)
-    path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
-    if path_to_wkhtmltopdf:
-        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-    else:
-        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
-else:
-    if path_to_wkhtmltopdf:
-        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-    else:
-        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
-else:
-    # المسار الخاص بـ Railway (Linux)
-    if path_to_wkhtmltopdf:
-        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-    else:
-        # لو فشل في إيجاده، بنجرب المسار الافتراضي لـ Nixpacks
-        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+        # البحث عن المسار في سيرفر Railway (Linux)
+        path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
+        if path_to_wkhtmltopdf:
+            return pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+        else:
+            # المسار الافتراضي المتوقع في Linux
+            return pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+
+# تنفيذ الإعداد مرة واحدة عند تشغيل التطبيق
+config = get_pdf_config()
+
 def generate_pdf_file(title, content, article_id):
     pdf_folder = os.path.join('static', 'pdfs')
     if not os.path.exists(pdf_folder):
@@ -88,7 +71,7 @@ def add_news_from_n8n():
     title = data.get('title')
     description = data.get('summary')
     category = data.get('category')
-    url = data.get('link') # الرابط الأصلي للخبر (Bonus)
+    url = data.get('link') 
     source = "AI News Agent"
 
     db = connect_db()
@@ -97,7 +80,6 @@ def add_news_from_n8n():
 
     try:
         cursor = db.cursor(dictionary=True)
-        # التأكد من عدم تكرار الخبر
         cursor.execute("SELECT id FROM articles WHERE url = %s", (url,))
         if cursor.fetchone() is None:
             sql = "INSERT INTO articles (title, description, category, url, source_name) VALUES (%s, %s, %s, %s, %s)"
@@ -123,6 +105,8 @@ def add_news_from_n8n():
 def index():
     search_query = request.args.get('search', '')
     db = connect_db()
+    if not db: return "Database connection failed", 500
+    
     cursor = db.cursor(dictionary=True)
     categories = ['Wars & Conflicts', 'Economy & Gold', 'Sports', 'Technology']
     organized_news = {}
