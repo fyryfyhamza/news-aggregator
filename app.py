@@ -12,9 +12,8 @@ if platform.system() == "Windows":
     path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
     config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 else:
-    # على السيرفر (Linux) يتم استدعاؤه مباشرة بعد تثبيته بـ sudo apt install wkhtmltopdf
-# بدلاً من المسار القديم، استخدم هذا السطر:
-config = pdfkit.configuration()
+    # يجب أن يكون هناك 4 مسافات (أو Tab) قبل السطر التالي
+    config = pdfkit.configuration()
 def generate_pdf_file(title, content, article_id):
     pdf_folder = os.path.join('static', 'pdfs')
     if not os.path.exists(pdf_folder):
