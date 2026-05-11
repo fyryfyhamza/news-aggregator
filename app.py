@@ -7,24 +7,25 @@ import shutil
 
 app = Flask(__name__)
 
-# --- إعدادات wkhtmltopdf الديناميكية الشاملة ---
+# --- إعدادات wkhtmltopdf الديناميكية الذكية ---
 def get_pdf_config():
     if platform.system() == "Windows":
         # المسار الخاص بجهازك أثناء التطوير
         path_wkhtmltopdf = r'D:\Lectuers\Semester 6\Intelligent Agent\project\books_scraper_project\programs\wkhtmltopdf\bin\wkhtmltopdf.exe'
         return pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
     else:
-        # 1. البحث التلقائي في النظام عن طريق shutil
-        path_to_wkhtmltopdf = shutil.which('wkhtmltopdf')
-        if path_to_wkhtmltopdf:
-            return pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-        
-        # 2. تجربة المسارات المشهورة في Linux و Railway لو الحل الأول فشل
-        for path in ['/usr/bin/wkhtmltopdf', '/usr/local/bin/wkhtmltopdf', '/opt/bin/wkhtmltopdf']:
-            if os.path.exists(path):
+        # 1. البحث في المسارات القياسية لنظام Linux بعد تثبيت nixPkgs
+        paths = [
+            shutil.which('wkhtmltopdf'),
+            '/usr/bin/wkhtmltopdf',
+            '/usr/local/bin/wkhtmltopdf',
+            '/opt/bin/wkhtmltopdf'
+        ]
+        for path in paths:
+            if path and os.path.exists(path):
                 return pdfkit.configuration(wkhtmltopdf=path)
         
-        # 3. المحاولة الأخيرة بإرسال الاسم فقط للنظام
+        # 2. آخر محاولة باستدعاء الاسم مباشرة
         return pdfkit.configuration(wkhtmltopdf='wkhtmltopdf')
 
 # تنفيذ الإعداد مرة واحدة عند تشغيل التطبيق لضمان الكفاءة
@@ -137,5 +138,5 @@ def automation():
     return render_template('automation.html', n8n_url=n8n_url)
 
 if __name__ == '__main__':
-    # استخدام المتغيرات البيئية للمنفذ (Port) لتوافق Railway
+    # استخدام المتغيرات البيئية للمنفذ لضمان عمل التطبيق على Railway
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
